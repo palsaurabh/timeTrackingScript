@@ -75,10 +75,14 @@ def update_time_popup(start_time, stop_event, label):
         elapsed_seconds = (current_time - start_time).total_seconds()
         hours, remainder = divmod(elapsed_seconds, 3600)
         minutes, seconds = divmod(remainder, 60)
+        minutes_elapsed, k = divmod(elapsed_seconds, 60)
         print("Before try")
         try:
+            # label.config(
+            #     text=f"Elapsed time: {int(hours):02d} hours, {int(minutes):02d} minutes, {int(seconds):02d} seconds"
+            # )
             label.config(
-                text=f"Elapsed time: {int(hours):02d} hours, {int(minutes):02d} minutes, {int(seconds):02d} seconds"
+                text=f"{int(minutes_elapsed):02d}m"
             )
         except RuntimeError:
             #The window may gave been destroyed, exit the loop
@@ -86,7 +90,7 @@ def update_time_popup(start_time, stop_event, label):
         
         print("Before sleep")
         time.sleep(1)
-        
+blink = 1      
 def update_time_in_main_thread(start_time, stop_event, label, root):
     if stop_event.is_set():
         return  # Stop updates if the event is set
@@ -94,9 +98,22 @@ def update_time_in_main_thread(start_time, stop_event, label, root):
     elapsed_seconds = (current_time - start_time).total_seconds()
     hours, remainder = divmod(elapsed_seconds, 3600)
     minutes, seconds = divmod(remainder, 60)
+    # label.config(
+    #     text=f"Elapsed time: {int(hours):02d} hours, {int(minutes):02d} minutes, {int(seconds):02d} seconds"
+    # )
+    minutes_elapsed, k = divmod(elapsed_seconds, 60)
     label.config(
-        text=f"Elapsed time: {int(hours):02d} hours, {int(minutes):02d} minutes, {int(seconds):02d} seconds"
+        text=f"{int(minutes_elapsed):02d}m"
     )
+
+    global blink
+    if minutes_elapsed > 30:
+        if blink == 1:
+            root.configure(bg="red")
+            blink = 0
+        else:
+            root.configure(bg="green")
+            blink = 1
     # Schedule the next update after 1 second
     root.after(1000, update_time_in_main_thread, start_time, stop_event, label, root)
 
@@ -104,17 +121,24 @@ def create_time_popup(start_time, stop_event, task_name):
     # Create a new Tkinter window
     root = tk.Tk()
     root.title(task_name)
-    root.geometry("460x27")
+    root.title("Timer")
+    root.geometry("40x27")
     root.wm_attributes("-topmost", True)
-    root.configure(bg="red")
+    root.configure(bg="green")
 
     # Add a label to display elapsed time
     bold_font = ("Arial", 14, "bold")  # Bold font specification
+    # label = Label(root, 
+    #                 text="Elapsed time: 00:00:00", 
+    #                 font=bold_font,
+    #                 bg='red',
+    #                 fg='black')
     label = Label(root, 
-                    text="Elapsed time: 00:00:00", 
+                    text="00m", 
                     font=bold_font,
                     bg='red',
                     fg='black')
+
     label.pack(expand=True)
 
     # Schedule the first update in the main thread
