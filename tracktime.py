@@ -91,7 +91,7 @@ def update_time_popup(start_time, stop_event, label):
         print("Before sleep")
         time.sleep(1)
 blink = 1      
-def update_time_in_main_thread(start_time, stop_event, label, root):
+def update_time_in_main_thread(start_time, stop_event, label, root, task_duration):
     if stop_event.is_set():
         return  # Stop updates if the event is set
     current_time = datetime.now()
@@ -107,7 +107,7 @@ def update_time_in_main_thread(start_time, stop_event, label, root):
     )
 
     global blink
-    if minutes_elapsed > 30:
+    if minutes_elapsed > int(task_duration):
         if blink == 1:
             root.configure(bg="red")
             blink = 0
@@ -115,9 +115,9 @@ def update_time_in_main_thread(start_time, stop_event, label, root):
             root.configure(bg="green")
             blink = 1
     # Schedule the next update after 1 second
-    root.after(1000, update_time_in_main_thread, start_time, stop_event, label, root)
+    root.after(1000, update_time_in_main_thread, start_time, stop_event, label, root, task_duration)
 
-def create_time_popup(start_time, stop_event, task_name):
+def create_time_popup(start_time, stop_event, task_name, task_duration):
     # Create a new Tkinter window
     root = tk.Tk()
     root.title(task_name)
@@ -142,7 +142,7 @@ def create_time_popup(start_time, stop_event, task_name):
     label.pack(expand=True)
 
     # Schedule the first update in the main thread
-    root.after(1000, update_time_in_main_thread, start_time, stop_event, label, root)
+    root.after(1000, update_time_in_main_thread, start_time, stop_event, label, root, task_duration)
 
     def on_close():
         # Signal the thread to stop and destroy the Tkinter window
@@ -167,6 +167,7 @@ def main():
     while True:
         print("\n--- New Task ---")
         task_name = input("What are you going to do now? ")
+        task_duration = input("Duration? ")
         start_time = datetime.now()
         print(f"Started task '{task_name}' at {start_time.strftime('%Y-%m-%d %H:%M:%S')}.")
         print("Press Enter when you finish the task...")
@@ -174,7 +175,7 @@ def main():
         # Create a stop event for the thread
         stop_event = threading.Event()
 
-        popup_thread = threading.Thread(target=create_time_popup, args=(start_time, stop_event, task_name))
+        popup_thread = threading.Thread(target=create_time_popup, args=(start_time, stop_event, task_name, task_duration))
         popup_thread.start()
 
         # Wait for the user to press Enter
